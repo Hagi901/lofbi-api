@@ -1,59 +1,155 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 📦 LOFBI API — REST API Inventaris & Persediaan (BMN)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+![Laravel Version](https://img.shields.io/badge/Laravel-11-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
+![PHP Version](https://img.shields.io/badge/PHP-%5E8.2-777BB4?style=for-the-badge&logo=php&logoColor=white)
+![Database](https://img.shields.io/badge/Database-MySQL%20%7C%20SQLite-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-## About Laravel
+Backend REST API untuk **Sistem Layanan Operasional & Form BMN / Inventarisasi (LOFBI)**. Aplikasi ini mengelola aset fisik inventaris (dengan kalkulasi penyusutan otomatis), persediaan barang habis pakai (dengan metode pemotongan stok FIFO), stok opname fisik per ruangan, serta menyajikan dashboard statistik dan laporan resmi (BAOP, DBR, Nilai Buku).
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+---
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Fitur Utama
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- 🔑 **Autentikasi Bearer Token (Sanctum)** — Keamanan endpoint dengan sistem perizinan berbasis peran (*Role-Based Access Control*).
+- 👥 **Multi Role User**:
+  - `admin`: Input aset, persediaan, barang masuk, buat pengajuan keluar, dan opname fisik.
+  - `kasubbag`: Monitoring dashboard, approval/penolakan pengajuan barang keluar, dan laporan.
+- 🏢 **Manajemen Aset Inventaris**:
+  - Pengelompokan aset per jenis barang dan unit detail.
+  - Penghitungan penyusutan metode garis lurus (*straight-line*) otomatis per semester.
+- 📦 **Manajemen Persediaan & Batch FIFO**:
+  - Pencatatan barang masuk per batch (harga & tanggal per perolehan).
+  - Pemotongan stok otomatis metode **FIFO (First In, First Out)** dari batch paling awal saat disetujui Kasubbag.
+  - Validasi kecukupan stok secara real-time.
+- 📋 **Stok Opname Fisik**:
+  - Verifikasi kondisi fisik barang aktual per ruangan dan pencatatan riwayat sesi opname.
+- 📊 **Dashboard & Laporan**:
+  - Statistik total aset, nilai buku, barang rusak, alert stok menipis, dan pengajuan *pending*.
+  - Laporan Berita Acara Opname (BAOP), Daftar Barang Ruangan (DBR), Nilai Buku Aset, serta Export CSV berstandar RFC 4180.
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+## 🛠️ Persyaratan Sistem
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP `>= 8.2`
+- Composer `>= 2.0`
+- MySQL / MariaDB (via XAMPP) atau SQLite
+- Extension PHP: `OpenSSL`, `PDO`, `Mbstring`, `Tokenizer`, `XML`, `Ctype`, `JSON`, `BCMath`
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+## 🚀 Panduan Instalasi (Local Development)
 
-### Premium Partners
+### 1. Clone Repository
+```bash
+git clone https://github.com/Hagi901/lofbi-api.git
+cd lofbi-api
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+### 2. Install Dependency PHP
+```bash
+composer install
+```
 
-## Contributing
+### 3. Buat File Konfigurasi `.env`
+```bash
+copy .env.example .env
+php artisan key:generate
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 4. Konfigurasi Database di `.env` (XAMPP / MySQL)
+Buat database bernama **`lofbi_db`** di phpMyAdmin (`http://localhost/phpmyadmin`), lalu buka file `.env` dan atur:
 
-## Code of Conduct
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=lofbi_db
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 5. Jalankan Migrasi Database & Seeder Data Demo
+```bash
+php artisan migrate:fresh --seed
+```
 
-## Security Vulnerabilities
+### 6. Jalankan Server API
+```bash
+php artisan serve
+```
+Server REST API aktif di: **`http://127.0.0.1:8000/api`**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 🔐 Akun Demo (Seeder)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Role | Email | Password | Hak Akses Utama |
+|---|---|---|---|
+| **Admin** | `admin@lofbi.test` | `password` | Full Input (Aset, Persediaan, Opname, Pengajuan) |
+| **Kasubbag** | `kasubbag@lofbi.test` | `password` | Approval FIFO, Monitoring Dashboard, Laporan |
+
+---
+
+## 📑 Daftar Endpoint Utama (REST API)
+
+| Method | Endpoint | Role | Deskripsi |
+|---|---|---|---|
+| `POST` | `/api/login` | Public | Login user & dapatkan token Bearer |
+| `POST` | `/api/logout` | Auth | Revoke token session |
+| `GET` | `/api/me` | Auth | Profil user terautentikasi |
+| `GET` | `/api/dashboard/summary` | Auth | Ringkasan statistik & alert dashboard |
+| `GET` | `/api/aset/ringkas` | Auth | Ringkasan aset per jenis barang (Paginated) |
+| `GET` | `/api/aset/jenis/{id}/unit` | Auth | Detail unit aset per jenis barang |
+| `POST` | `/api/aset` | Admin | Tambah unit aset baru |
+| `GET` | `/api/persediaan/ringkas` | Auth | Ringkasan persediaan & sisa stok total |
+| `POST` | `/api/persediaan/{id}/barang-masuk` | Admin | Input barang masuk (buat batch baru) |
+| `POST` | `/api/persediaan/{id}/pengajuan-keluar` | Admin | Buat pengajuan barang keluar |
+| `GET` | `/api/persediaan/pengajuan` | Auth | Daftar pengajuan barang keluar |
+| `POST` | `/api/persediaan/pengajuan/{id}/setujui` | **Kasubbag** | Approval pengajuan & potong stok FIFO |
+| `POST` | `/api/persediaan/pengajuan/{id}/tolak` | **Kasubbag** | Tolak pengajuan barang keluar (wajib isi alasan) |
+| `GET` | `/api/opname/ruangan/{id}` | Admin | Referensi aset & persediaan di ruangan |
+| `POST` | `/api/opname` | Admin | Simpan hasil pemeriksaan opname fisik |
+| `GET` | `/api/laporan/baop` | Auth | Laporan Berita Acara Opname |
+| `GET` | `/api/laporan/dbr` | Auth | Laporan Daftar Barang Ruangan |
+| `GET` | `/api/laporan/nilai-buku` | Auth | Laporan Rekap Nilai Buku Aset |
+| `GET` | `/api/laporan/export?jenis=dbr&format=csv` | Auth | Export data laporan ke format CSV |
+
+---
+
+## 🧪 Pengujian API (Postman Collection)
+
+File **[`LOFBI_API.postman_collection.json`](LOFBI_API.postman_collection.json)** telah tersedia di root repository ini.
+
+1. Buka aplikasi **Postman** / Bruno / Insomnia.
+2. Import file `LOFBI_API.postman_collection.json`.
+3. Jalankan request **`Login Admin`** atau **`Login Kasubbag`**. Token Bearer akan otomatis tersimpan untuk request berikutnya.
+
+---
+
+## 📐 Algoritma & Logika Bisnis
+
+### 1. Metode FIFO Persediaan
+```text
+Batch #1 (Masuk 10 Jan) -> Sisa: 20 pcs @ Rp 3.000
+Batch #2 (Masuk 15 Apr) -> Sisa: 100 pcs @ Rp 3.200
+
+Pengajuan Keluar disetujui: 30 pcs
+- 20 pcs diambil dari Batch #1 (Sisa Batch #1 -> 0)
+- 10 pcs diambil dari Batch #2 (Sisa Batch #2 -> 90)
+```
+
+### 2. Penyusutan Aset (Garis Lurus per Semester)
+```text
+Penyusutan / Tahun = Nilai Perolehan / Masa Manfaat (Tahun)
+Penyusutan / Semester = Penyusutan / Tahun / 2
+Nilai Buku = Nilai Perolehan - Akumulasi Penyusutan
+```
+Command scheduler: `php artisan lofbi:hitung-penyusutan` (Otomatis berjalan tiap 1 Jan & 1 Juli).
+
+---
+
+## 📄 Lisensi
+
+Project ini dirilis di bawah lisensi [MIT License](LICENSE).
