@@ -3,13 +3,19 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreAsetRequest;
+use App\Http\Resources\AsetResource;
 use App\Models\Aset;
 use App\Models\JenisBarang;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class AsetController extends Controller
 {
+    /**
+     * Ringkasan aset dikelompokkan per jenis barang.
+     * Mendukung filter: kategori_id, kondisi, ruangan_id, search.
+     * Response dipaginasi 20 item per halaman.
+     */
     public function ringkas(Request $request)
     {
         $query = Aset::query()
@@ -30,35 +36,46 @@ class AsetController extends Controller
             ->selectRaw('jenis_barangs.id as jenis_barang_id, jenis_barangs.nama_generik, kategoris.nama as kategori, count(asets.id) as jumlah_unit, coalesce(sum(asets.nilai_buku), 0) as total_nilai_buku')
             ->groupBy('jenis_barangs.id', 'jenis_barangs.nama_generik', 'kategoris.nama')
             ->orderBy('jenis_barangs.nama_generik')
-            ->get();
+            ->paginate(20);
     }
 
+    /**
+     * Daftar unit aset per jenis barang. Dipaginasi 20 item per halaman.
+     */
     public function unit(JenisBarang $jenisBarang)
     {
-        return Aset::with(['jenisBarang.kategori', 'ruangan'])
+        $asets = Aset::with(['jenisBarang.kategori', 'ruangan'])
             ->where('jenis_barang_id', $jenisBarang->id)
             ->orderBy('kode_aset')
-            ->get();
+            ->paginate(20);
+
+        return AsetResource::collection($asets);
     }
 
-    public function store(Request $request)
+    public function store(StoreAsetRequest $request)
     {
-        $data = $this->validated($request);
+        $data = $request->validated();
         $data['nilai_buku'] = $data['nilai_buku'] ?? $data['nilai_perolehan'];
 
-        return response()->json(Aset::create($data)->load(['jenisBarang.kategori', 'ruangan']), 201);
+        $aset = Aset::create($data)->load(['jenisBarang.kategori', 'ruangan']);
+
+        return (new AsetResource($aset))
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(Aset $aset)
     {
-        return $aset->load(['jenisBarang.kategori.masaManfaat', 'ruangan', 'riwayat']);
+        return new AsetResource(
+            $aset->load(['jenisBarang.kategori.masaManfaat', 'ruangan', 'riwayat'])
+        );
     }
 
-    public function update(Request $request, Aset $aset)
+    public function update(StoreAsetRequest $request, Aset $aset)
     {
-        $aset->update($this->validated($request, $aset->id));
+        $aset->update($request->validated());
 
-        return $aset->load(['jenisBarang.kategori', 'ruangan']);
+        return new AsetResource($aset->load(['jenisBarang.kategori', 'ruangan']));
     }
 
     public function destroy(Aset $aset)
@@ -71,22 +88,5 @@ class AsetController extends Controller
     public function riwayat(Aset $aset)
     {
         return $aset->riwayat()->latest('tanggal')->get();
-    }
-
-    private function validated(Request $request, ?int $asetId = null): array
-    {
-        return $request->validate([
-            'jenis_barang_id' => ['required', 'exists:jenis_barangs,id'],
-            'kode_aset' => ['required', 'string', Rule::unique('asets', 'kode_aset')->ignore($asetId)],
-            'merk' => ['nullable', 'string'],
-            'model' => ['nullable', 'string'],
-            'kondisi' => ['required', Rule::in(['baik', 'rusak_ringan', 'rusak_berat'])],
-            'ruangan_id' => ['nullable', 'exists:ruangans,id'],
-            'nilai_perolehan' => ['required', 'numeric', 'min:0'],
-            'tanggal_perolehan' => ['nullable', 'date'],
-            'akumulasi_penyusutan' => ['sometimes', 'numeric', 'min:0'],
-            'nilai_buku' => ['sometimes', 'numeric', 'min:0'],
-            'terakhir_dihitung_semester' => ['nullable', 'string'],
-        ]);
     }
 }

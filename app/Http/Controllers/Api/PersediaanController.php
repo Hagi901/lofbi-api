@@ -3,6 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\BarangMasukRequest;
+use App\Http\Requests\PengajuanKeluarRequest;
+use App\Http\Requests\StorePersediaanRequest;
+use App\Http\Resources\PengajuanResource;
 use App\Models\BatchPersediaan;
 use App\Models\DetailPemotonganBatch;
 use App\Models\JenisBarang;
@@ -13,6 +17,10 @@ use Illuminate\Support\Facades\DB;
 
 class PersediaanController extends Controller
 {
+    /**
+     * Ringkasan persediaan dikelompokkan per jenis barang.
+     * Dipaginasi 20 item per halaman.
+     */
     public function ringkas()
     {
         return Persediaan::query()
@@ -22,7 +30,7 @@ class PersediaanController extends Controller
             ->selectRaw('jenis_barangs.id as jenis_barang_id, jenis_barangs.nama_generik, kategoris.nama as kategori, count(distinct persediaans.id) as jumlah_varian, coalesce(sum(batch_persediaans.sisa_stok), 0) as total_stok, min(persediaans.stok_minimum) as stok_minimum')
             ->groupBy('jenis_barangs.id', 'jenis_barangs.nama_generik', 'kategoris.nama')
             ->orderBy('jenis_barangs.nama_generik')
-            ->get();
+            ->paginate(20);
     }
 
     public function detailByJenis(JenisBarang $jenisBarang)
@@ -32,25 +40,24 @@ class PersediaanController extends Controller
             ->get();
     }
 
-    public function store(Request $request)
+    public function store(StorePersediaanRequest $request)
     {
-        return response()->json(Persediaan::create($this->validated($request))->load(['jenisBarang.kategori', 'ruangan']), 201);
+        return response()->json(
+            Persediaan::create($request->validated())->load(['jenisBarang.kategori', 'ruangan']),
+            201
+        );
     }
 
-    public function update(Request $request, Persediaan $persediaan)
+    public function update(StorePersediaanRequest $request, Persediaan $persediaan)
     {
-        $persediaan->update($this->validated($request));
+        $persediaan->update($request->validated());
 
         return $persediaan->load(['jenisBarang.kategori', 'ruangan']);
     }
 
-    public function barangMasuk(Request $request, Persediaan $persediaan)
+    public function barangMasuk(BarangMasukRequest $request, Persediaan $persediaan)
     {
-        $data = $request->validate([
-            'jumlah' => ['required', 'integer', 'min:1'],
-            'tanggal' => ['required', 'date'],
-            'harga_satuan' => ['required', 'numeric', 'min:0'],
-        ]);
+        $data = $request->validated();
 
         return DB::transaction(function () use ($data, $persediaan) {
             $lastBatch = BatchPersediaan::where('persediaan_id', $persediaan->id)->lockForUpdate()->max('no_batch') ?? 0;
@@ -76,13 +83,16 @@ class PersediaanController extends Controller
         });
     }
 
-    public function pengajuanKeluar(Request $request, Persediaan $persediaan)
+    /**
+     * Buat pengajuan barang keluar.
+     * Validasi kecukupan stok dilakukan SEBELUM pengajuan dibuat,
+     * bukan saat approval, sehingga pengajuan yang pasti gagal tidak lolos masuk.
+     */
+    public function pengajuanKeluar(PengajuanKeluarRequest $request, Persediaan $persediaan)
     {
-        $data = $request->validate([
-            'jumlah' => ['required', 'integer', 'min:1'],
-            'tanggal' => ['required', 'date'],
-            'unit_kerja_penerima' => ['required', 'string'],
-        ]);
+        $request->ensureStokCukup($persediaan);
+
+        $data = $request->validated();
 
         return response()->json(TransaksiPersediaan::create([
             'persediaan_id' => $persediaan->id,
@@ -95,26 +105,33 @@ class PersediaanController extends Controller
         ]), 201);
     }
 
+    /**
+     * Daftar pengajuan barang keluar. Dapat difilter dengan ?status=menunggu
+     * Dipaginasi 20 item per halaman.
+     */
     public function pengajuan(Request $request)
     {
-        return TransaksiPersediaan::with(['persediaan.jenisBarang', 'detailPemotongan.batch'])
+        $pengajuans = TransaksiPersediaan::with(['persediaan.jenisBarang', 'detailPemotongan.batch'])
             ->where('jenis', 'keluar')
             ->when($request->status, fn ($q, $status) => $q->where('status', $status))
             ->latest()
-            ->get();
+            ->paginate(20);
+
+        return PengajuanResource::collection($pengajuans);
     }
 
-    public function setujui(Request $request, TransaksiPersediaan $transaksi)
+    /**
+     * Kasubbag menyetujui pengajuan barang keluar.
+     * Stok dipotong secara FIFO dari batch paling awal.
+     * Proteksi role dilakukan oleh middleware 'role:kasubbag' di route.
+     */
+    public function setujui(TransaksiPersediaan $transaksi)
     {
-        if ($request->user()->role !== 'kasubbag') {
-            return response()->json(['message' => 'Hanya Kasubbag yang dapat menyetujui.'], 403);
-        }
-
         if ($transaksi->status !== 'menunggu' || $transaksi->jenis !== 'keluar') {
             return response()->json(['message' => 'Pengajuan tidak dapat diproses.'], 422);
         }
 
-        return DB::transaction(function () use ($transaksi, $request) {
+        return DB::transaction(function () use ($transaksi) {
             $remaining = $transaksi->jumlah;
             $batches = BatchPersediaan::where('persediaan_id', $transaksi->persediaan_id)
                 ->where('sisa_stok', '>', 0)
@@ -144,44 +161,39 @@ class PersediaanController extends Controller
 
             $transaksi->update([
                 'status' => 'disetujui',
-                'disetujui_oleh' => $request->user()->id,
+                'diputuskan_oleh' => request()->user()->id,
                 'tanggal_keputusan' => now(),
             ]);
 
-            return $transaksi->load(['detailPemotongan.batch', 'persediaan.jenisBarang']);
+            return new PengajuanResource(
+                $transaksi->load(['detailPemotongan.batch', 'persediaan.jenisBarang'])
+            );
         });
     }
 
+    /**
+     * Kasubbag menolak pengajuan barang keluar.
+     * Catatan penolakan wajib diisi.
+     * Proteksi role dilakukan oleh middleware 'role:kasubbag' di route.
+     */
     public function tolak(Request $request, TransaksiPersediaan $transaksi)
     {
-        if ($request->user()->role !== 'kasubbag') {
-            return response()->json(['message' => 'Hanya Kasubbag yang dapat menolak.'], 403);
-        }
+        $data = $request->validate([
+            'catatan_penolakan' => ['required', 'string'],
+        ]);
 
-        $data = $request->validate(['catatan_penolakan' => ['required', 'string']]);
         $transaksi->update([
             'status' => 'ditolak',
-            'disetujui_oleh' => $request->user()->id,
+            'diputuskan_oleh' => $request->user()->id,
             'catatan_penolakan' => $data['catatan_penolakan'],
             'tanggal_keputusan' => now(),
         ]);
 
-        return $transaksi;
+        return new PengajuanResource($transaksi);
     }
 
     public function batch(Persediaan $persediaan)
     {
         return $persediaan->batches()->orderBy('no_batch')->get();
-    }
-
-    private function validated(Request $request): array
-    {
-        return $request->validate([
-            'jenis_barang_id' => ['required', 'exists:jenis_barangs,id'],
-            'merk' => ['nullable', 'string'],
-            'satuan' => ['required', 'string'],
-            'stok_minimum' => ['required', 'integer', 'min:0'],
-            'ruangan_id' => ['nullable', 'exists:ruangans,id'],
-        ]);
     }
 }

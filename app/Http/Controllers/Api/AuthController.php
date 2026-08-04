@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\PersonalAccessToken;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -24,28 +23,28 @@ class AuthController extends Controller
             return response()->json(['message' => 'Email atau password salah.'], 422);
         }
 
-        $plainToken = Str::random(80);
-        $user->tokens()->create([
-            'name' => $request->input('device_name', 'api'),
-            'token' => hash('sha256', $plainToken),
-        ]);
+        $token = $user->createToken($request->input('device_name', 'api'))->plainTextToken;
 
         return response()->json([
             'token_type' => 'Bearer',
-            'access_token' => $plainToken,
-            'user' => $user,
+            'access_token' => $token,
+            'user' => new UserResource($user),
         ]);
     }
 
     public function logout(Request $request)
     {
-        PersonalAccessToken::where('token', hash('sha256', $request->bearerToken()))->delete();
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logout berhasil.']);
     }
 
+    /**
+     * Mengembalikan profil user yang sedang login.
+     * Dibungkus UserResource agar hanya ekspos field yang diperlukan.
+     */
     public function me(Request $request)
     {
-        return response()->json($request->user());
+        return new UserResource($request->user());
     }
 }

@@ -8,7 +8,7 @@ class TransaksiPersediaan extends Model
 {
     protected $fillable = [
         'persediaan_id', 'jenis', 'jumlah', 'tanggal', 'unit_kerja_penerima',
-        'diajukan_oleh', 'status', 'disetujui_oleh', 'catatan_penolakan',
+        'diajukan_oleh', 'status', 'diputuskan_oleh', 'catatan_penolakan',
         'tanggal_keputusan',
     ];
 

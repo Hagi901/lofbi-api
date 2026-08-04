@@ -3,8 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Aset;
-use Illuminate\Support\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 
 class HitungPenyusutanAset extends Command
 {

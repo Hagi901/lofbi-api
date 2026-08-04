@@ -1,0 +1,721 @@
+{
+	"info": {
+		"_postman_id": "lofbi-api-collection-v1",
+		"name": "LOFBI REST API Collection",
+		"description": "Koleksi lengkap REST API LOFBI (Inventaris & Persediaan). Siap di-import ke Postman, Insomnia, atau Bruno.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.collectionVariables.set('token', jsonData.access_token);",
+									"    pm.environment.set('token', jsonData.access_token);",
+									"    pm.globals.set('token', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@lofbi.test\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": ["{{base_url}}"],
+							"path": ["login"]
+						}
+					}
+				},
+				{
+					"name": "Login Kasubbag",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.access_token) {",
+									"    pm.collectionVariables.set('token', jsonData.access_token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"kasubbag@lofbi.test\",\n  \"password\": \"password\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/login",
+							"host": ["{{base_url}}"],
+							"path": ["login"]
+						}
+					}
+				},
+				{
+					"name": "User Profile (Me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/me",
+							"host": ["{{base_url}}"],
+							"path": ["me"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/logout",
+							"host": ["{{base_url}}"],
+							"path": ["logout"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. Dashboard & Master Data",
+			"item": [
+				{
+					"name": "Dashboard Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/dashboard/summary",
+							"host": ["{{base_url}}"],
+							"path": ["dashboard", "summary"]
+						}
+					}
+				},
+				{
+					"name": "Get Daftar Ruangan",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/ruangan",
+							"host": ["{{base_url}}"],
+							"path": ["ruangan"]
+						}
+					}
+				},
+				{
+					"name": "Get Daftar Kategori",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/kategori",
+							"host": ["{{base_url}}"],
+							"path": ["kategori"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Modul Aset Inventaris",
+			"item": [
+				{
+					"name": "Aset Ringkas (Grouped per Jenis)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/aset/ringkas",
+							"host": ["{{base_url}}"],
+							"path": ["aset", "ringkas"]
+						}
+					}
+				},
+				{
+					"name": "Aset Detail Unit per Jenis Barang (ID=1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/aset/jenis/1/unit",
+							"host": ["{{base_url}}"],
+							"path": ["aset", "jenis", "1", "unit"]
+						}
+					}
+				},
+				{
+					"name": "Tambah Aset Baru",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_barang_id\": 1,\n  \"kode_aset\": \"ELK-LAP-003\",\n  \"merk\": \"Dell\",\n  \"model\": \"Latitude 3420\",\n  \"kondisi\": \"baik\",\n  \"ruangan_id\": 1,\n  \"nilai_perolehan\": 14000000,\n  \"tanggal_perolehan\": \"2026-02-01\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/aset",
+							"host": ["{{base_url}}"],
+							"path": ["aset"]
+						}
+					}
+				},
+				{
+					"name": "Show Detail Aset (ID=1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/aset/1",
+							"host": ["{{base_url}}"],
+							"path": ["aset", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Aset (ID=1)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jenis_barang_id\": 1,\n  \"kode_aset\": \"ELK-LAP-001\",\n  \"merk\": \"Lenovo\",\n  \"model\": \"ThinkPad E14 Gen 4\",\n  \"kondisi\": \"baik\",\n  \"ruangan_id\": 1,\n  \"nilai_perolehan\": 12000000,\n  \"tanggal_perolehan\": \"2023-01-15\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/aset/1",
+							"host": ["{{base_url}}"],
+							"path": ["aset", "1"]
+						}
+					}
+				},
+				{
+					"name": "Riwayat Aset (ID=1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/aset/1/riwayat",
+							"host": ["{{base_url}}"],
+							"path": ["aset", "1", "riwayat"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Modul Persediaan & Batch FIFO",
+			"item": [
+				{
+					"name": "Persediaan Ringkas",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/persediaan/ringkas",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "ringkas"]
+						}
+					}
+				},
+				{
+					"name": "Input Barang Masuk (Batch Baru)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jumlah\": 30,\n  \"tanggal\": \"2026-08-01\",\n  \"harga_satuan\": 3500\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/persediaan/1/barang-masuk",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "1", "barang-masuk"]
+						}
+					}
+				},
+				{
+					"name": "Buat Pengajuan Barang Keluar (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"jumlah\": 10,\n  \"tanggal\": \"2026-08-03\",\n  \"unit_kerja_penerima\": \"Seksi Keuangan\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/persediaan/1/pengajuan-keluar",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "1", "pengajuan-keluar"]
+						}
+					}
+				},
+				{
+					"name": "Daftar Pengajuan (Filter Status)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/persediaan/pengajuan?status=menunggu",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "pengajuan"],
+							"query": [
+								{
+									"key": "status",
+									"value": "menunggu"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Approve Pengajuan Keluar (Kasubbag Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/persediaan/pengajuan/1/setujui",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "pengajuan", "1", "setujui"]
+						}
+					}
+				},
+				{
+					"name": "Tolak Pengajuan Keluar (Kasubbag Only)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"catatan_penolakan\": \"Jumlah barang yang diminta melebihi kuota per bulan.\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/persediaan/pengajuan/1/tolak",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "pengajuan", "1", "tolak"]
+						}
+					}
+				},
+				{
+					"name": "Daftar Batch Persediaan (ID=1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/persediaan/1/batch",
+							"host": ["{{base_url}}"],
+							"path": ["persediaan", "1", "batch"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Modul Opname Fisik",
+			"item": [
+				{
+					"name": "Get Referensi Barang per Ruangan (ID=1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/opname/ruangan/1",
+							"host": ["{{base_url}}"],
+							"path": ["opname", "ruangan", "1"]
+						}
+					}
+				},
+				{
+					"name": "Simpan Hasil Opname Fisik",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ruangan_id\": 1,\n  \"tanggal\": \"2026-08-03\",\n  \"status\": \"selesai\",\n  \"details\": [\n    {\n      \"aset_id\": 1,\n      \"kondisi_aktual\": \"baik\",\n      \"jumlah_aktual\": 1,\n      \"catatan\": \"Perangkat berfungsi normal\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/opname",
+							"host": ["{{base_url}}"],
+							"path": ["opname"]
+						}
+					}
+				},
+				{
+					"name": "Riwayat Sesi Opname",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/opname/riwayat",
+							"host": ["{{base_url}}"],
+							"path": ["opname", "riwayat"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Modul Laporan",
+			"item": [
+				{
+					"name": "Laporan BAOP (Berita Acara Opname)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/laporan/baop",
+							"host": ["{{base_url}}"],
+							"path": ["laporan", "baop"]
+						}
+					}
+				},
+				{
+					"name": "Laporan DBR (Daftar Barang Ruangan)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/laporan/dbr",
+							"host": ["{{base_url}}"],
+							"path": ["laporan", "dbr"]
+						}
+					}
+				},
+				{
+					"name": "Laporan Nilai Buku Aset",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/laporan/nilai-buku",
+							"host": ["{{base_url}}"],
+							"path": ["laporan", "nilai-buku"]
+						}
+					}
+				},
+				{
+					"name": "Export Laporan CSV",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "text/csv"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/laporan/export?jenis=dbr&format=csv",
+							"host": ["{{base_url}}"],
+							"path": ["laporan", "export"],
+							"query": [
+								{
+									"key": "jenis",
+									"value": "dbr"
+								},
+								{
+									"key": "format",
+									"value": "csv"
+								}
+							]
+						}
+					}
+				}
+			]
+		}
+	]
+}

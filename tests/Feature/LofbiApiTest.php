@@ -32,7 +32,7 @@ class LofbiApiTest extends TestCase
         $this->withToken($login->json('access_token'))
             ->getJson('/api/me')
             ->assertOk()
-            ->assertJsonPath('email', 'admin@lofbi.test');
+            ->assertJsonPath('data.email', 'admin@lofbi.test');
     }
 
     public function test_kasubbag_approval_cuts_inventory_fifo_across_batches(): void
@@ -82,8 +82,8 @@ class LofbiApiTest extends TestCase
         $this->withToken($token)
             ->postJson("/api/persediaan/pengajuan/{$pengajuan->id}/setujui")
             ->assertOk()
-            ->assertJsonPath('status', 'disetujui')
-            ->assertJsonCount(2, 'detail_pemotongan');
+            ->assertJsonPath('data.status', 'disetujui')
+            ->assertJsonCount(2, 'data.detail_pemotongan');
 
         $this->assertSame(0, $batch1->fresh()->sisa_stok);
         $this->assertSame(5, $batch2->fresh()->sisa_stok);
